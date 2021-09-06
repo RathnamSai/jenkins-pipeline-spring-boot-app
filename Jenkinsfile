@@ -24,8 +24,8 @@ node {
             sh 'ifconfig' 
         }
 
-        stage('Deliver') 
+        stage('Deploy') 
           {
-                sh 'bash ./jenkins/deliver.sh'
-        }
+                
+         }
 }
