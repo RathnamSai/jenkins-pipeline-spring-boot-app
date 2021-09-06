@@ -1,37 +1,29 @@
-def artifact
 pipeline {
-	// configure environmental variables
-	environment {
-	    registry = "https://registry.hub.docker.com"
-	    registryCredentials = "docker"
-	}
-	
-	// instruct jenkins to allocate executor and workspace for entire pipeline
-    agent any
-    
+    agent {
+        docker {
+            image 'maven:3-alpine' 
+            args '-v /root/.m2:/root/.m2' 
+        }
+    }
     stages {
-    	// compile and generate single executable jar with all dependencies
-		stage('Build') {
+        stage('Build') { 
             steps {
-                sh 'mvn install'
+                sh 'mvn -B -DskipTests clean package' 
             }
         }
-        // build docker image of an application
-		stage('Package') {
+        stage('Test') {
             steps {
-                script {
-                    artifact = docker.build("rathnamv/jenkins-springboot-app:myapp")
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
                 }
             }
         }
-        // push built docker image to docker hub
-		stage('Publish') {
-            steps {				
-                script {
-                    docker.withRegistry(registry, registryCredentials) {
-      					artifact.push()
-    				}
-                }
+        stage('Deliver') {
+            steps {
+                sh './jenkins/scripts/deliver.sh'
             }
         }
     }
